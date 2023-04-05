@@ -1,41 +1,53 @@
 import configparser
 import requests
 import json
-import sqlite3
+
+class Synch:
+
+    def __init__(self, application, parent=None):
+
+        self.app = application
+
+        self.app.ui.synch_button.clicked.connect(self.updateDataBaseProduct)
+        
+
+    def getDataBaseProduct(self):
+
+        config = configparser.ConfigParser()
+
+        config.read('config/main.ini')
+
+        url = "http://{0}/test1".format(config['main']['domain'])
+
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        return json.loads(response.json())
 
 
-def getDataBaseProduct():
+    def updateDataBaseProduct(self):
 
-    config = configparser.ConfigParser()
+        cur_waherhouse = self.app.con.cursor()
 
-    config.read('./config/main.ini')
+        cur_waherhouse.execute("DELETE FROM barcodes;")
 
-    url = "http://{0}/test1".format(config['main']['domain'])
+        self.app.con.commit()
 
-    payload = {}
-    headers = {}
+        decoded_hand = self.getDataBaseProduct()
 
-    response = requests.request("GET", url, headers=headers, data=payload)
+        i = 0
 
-    return json.loads(response.json())
+        for a in decoded_hand:
 
+            i += 1 
 
-def updateDataBaseProduct():
+            self.app.ui.status.setValue(i)
 
-    decoded_hand = getDataBaseProduct()
+            cur_waherhouse.execute("INSERT INTO barcodes( `id_u`, `name`, `model`, `brand`, `size`, `bar_code`, `price`) VALUES ('" + str(a['id_u']) + "', '" + str(
+                a['product']) + "', '" + str(a['model']) + "', '" + str(a['brand']) + "', '" + str(a['size']) + "', '" + str(a['bar_code']) + "', '" + str(a['price']) + "');")
 
-    conn = sqlite3.connect('burda.db', check_same_thread=False)
+            self.app.con.commit()
 
-    cur_waherhouse = conn.cursor()
-
-    cur_waherhouse.execute(" DELETE FROM barcodes;")
-
-    conn.commit()
-
-    for a in decoded_hand:
-
-        cur_waherhouse.execute("INSERT INTO barcodes( `id_u`, `name`, `model`, `brand`, `size`, `bar_code`, `price`) VALUES ('" + str(a['id_u']) + "', '" + str(a['product']) + "', '" + str(a['model']) + "', '" + str(a['brand']) + "', '" + str(a['size']) + "', '" + str(a['bar_code']) + "', '" + str(a['price']) + "');")
-
-        conn.commit()
-
-updateDataBaseProduct()
+        self.app.view_message('ok 200', '200')

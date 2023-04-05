@@ -1,11 +1,15 @@
 from PyQt5 import QtWidgets, QtGui, QtWidgets, QtPrintSupport
 import configparser
 from window import Ui_Dialog
-import sys, sqlite3
+import sys
+import sqlite3
 import qrcode
 from PIL.ImageQt import ImageQt
 from PyQt5.QtGui import QPixmap
-from win32.win32print import *
+import requests
+import json
+import numpy as np
+from synch import Synch
 
 
 class Window(QtWidgets.QMainWindow):
@@ -21,6 +25,8 @@ class Window(QtWidgets.QMainWindow):
 
         self.ui.confirm_button.clicked.connect(self.print_barcode)
 
+        self.synch = Synch(application=self)
+
         self.config = configparser.ConfigParser()
 
         self.ui.status.setValue(0)
@@ -30,11 +36,11 @@ class Window(QtWidgets.QMainWindow):
         cur.execute(sql)
         return cur.fetchall()
 
-
     def print_barcode(self):
 
         barcode = self.ui.line_barkod.displayText()
-        all_results = self.sql_run(f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{barcode}"')
+        all_results = self.sql_run(
+            f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{barcode}"')
 
         text = barcode
 
@@ -47,7 +53,7 @@ class Window(QtWidgets.QMainWindow):
         pix = pix.scaledToWidth(70)
 
         dialog = QtPrintSupport.QPrintDialog()
-        
+
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
 
             painter = QtGui.QPainter()
@@ -69,9 +75,6 @@ class Window(QtWidgets.QMainWindow):
             painter.drawText(70, 15, all_results[0][2])
 
             painter.setFont(font_body)
-
-            
-            
 
             painter.drawText(
                 5,
@@ -123,6 +126,15 @@ class Window(QtWidgets.QMainWindow):
             )
 
             painter.end()
+    
+
+    def view_message(self, message, header):
+
+        msgBox = QtWidgets.QMessageBox()
+        msgBox.setWindowTitle(header)
+        msgBox.setText(message)
+        msgBox.exec()
+
 
 
 app = QtWidgets.QApplication([])

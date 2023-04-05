@@ -40,6 +40,9 @@ class Ui_Dialog(object):
         self.status.setGeometry(QtCore.QRect(150, 20, 171, 20))
         self.status.setProperty("value", 24)
         self.status.setObjectName("status")
+        self.synch_button = QtWidgets.QPushButton(Dialog)
+        self.synch_button.setGeometry(QtCore.QRect(40, 20, 101, 23))
+        self.synch_button.setObjectName("synch_button")
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -51,3 +54,14 @@ class Ui_Dialog(object):
         self.label_3.setText(_translate("Dialog", "Партия"))
         self.label_4.setText(_translate("Dialog", "Цех"))
         self.confirm_button.setText(_translate("Dialog", "Принт"))
+        self.synch_button.setText(_translate("Dialog", "Синхронизация"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Dialog = QtWidgets.QDialog()
+    ui = Ui_Dialog()
+    ui.setupUi(Dialog)
+    Dialog.show()
+    sys.exit(app.exec_())
