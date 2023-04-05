@@ -6,11 +6,9 @@ import sqlite3
 import qrcode
 from PIL.ImageQt import ImageQt
 from PyQt5.QtGui import QPixmap
-import requests
-import json
-import numpy as np
 from synch import Synch
-
+import barcode
+from barcode.writer import ImageWriter
 
 class Window(QtWidgets.QMainWindow):
 
@@ -38,19 +36,19 @@ class Window(QtWidgets.QMainWindow):
 
     def print_barcode(self):
 
-        barcode = self.ui.line_barkod.displayText()
+        # barcode = self.ui.line_barkod.displayText()
         all_results = self.sql_run(
-            f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{barcode}"')
+            f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{self.ui.line_barkod.displayText()}"')
 
-        text = barcode
+        ean = barcode.get('ean13', self.ui.line_barkod.displayText(), writer=ImageWriter())
+        filename = ean.save('barcode',options={"write_text": False})
 
-        img = qrcode.make(text)
 
-        qr = ImageQt(img)
+        qr = ImageQt(filename)
 
         pix = QPixmap.fromImage(qr)
 
-        pix = pix.scaledToWidth(70)
+        pix = pix.scaledToWidth(110)
 
         dialog = QtPrintSupport.QPrintDialog()
 
@@ -116,14 +114,7 @@ class Window(QtWidgets.QMainWindow):
                 )
             )
 
-            painter.drawPixmap(140, 15, pix)
-            painter.drawText(
-                70,
-                140,
-                "{0}".format(
-                    self.ui.line_barkod.displayText(),
-                )
-            )
+            painter.drawPixmap(80, 40, pix)
 
             painter.end()
     
