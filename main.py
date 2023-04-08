@@ -10,8 +10,8 @@ from synch import Synch
 import barcode
 from barcode.writer import ImageWriter
 
-class Window(QtWidgets.QMainWindow):
 
+class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
 
@@ -38,17 +38,27 @@ class Window(QtWidgets.QMainWindow):
 
         # barcode = self.ui.line_barkod.displayText()
         all_results = self.sql_run(
-            f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{self.ui.line_barkod.displayText()}"')
+            f'SELECT name,model,brand,size FROM barcodes WHERE bar_code = "{self.ui.line_barkod.displayText()}"'
+        )
 
-        ean = barcode.get('ean13', self.ui.line_barkod.displayText(), writer=ImageWriter())
-        filename = ean.save('barcode',options={"write_text": False})
 
+        if(len(self.ui.line_barkod.displayText()) > 12):
+            bbb = self.ui.line_barkod.displayText() [10:]
+        else:
+            bbb = self.ui.line_barkod.displayText() [6:]
+        
+        code = barcode.Code39(bbb, writer=ImageWriter(), add_checksum=False)
+        
+        code.writer.dpi = 300 * 30 / 30
+        
+        filename = code.save("barcode",options={'module_width': 0.2,'module_height': 10, "write_text": False})
+        
 
         qr = ImageQt(filename)
 
         pix = QPixmap.fromImage(qr)
 
-        pix = pix.scaledToWidth(110)
+        pix = pix.scaledToWidth(220)
 
         dialog = QtPrintSupport.QPrintDialog()
 
@@ -57,67 +67,35 @@ class Window(QtWidgets.QMainWindow):
             painter = QtGui.QPainter()
 
             font_header = QtGui.QFont()
-            font_header.setFamily('Helvetica')
-            font_header.setPixelSize(20)
+            font_header.setFamily("Helvetica")
+            font_header.setPixelSize(23)
 
             font_body = QtGui.QFont()
-            font_body.setFamily('Helvetica')
-            font_body.setPixelSize(11)
+            font_body.setFamily("Helvetica")
+            font_body.setPixelSize(14)
 
             painter.begin(dialog.printer())
 
             painter.setFont(font_header)
 
-            self.config.read('config/main.ini')
+            self.config.read("config/main.ini")
 
-            painter.drawText(70, 15, all_results[0][2])
+            painter.drawText(70, 20, all_results[0][2])
 
             painter.setFont(font_body)
 
-            painter.drawText(
-                5,
-                35,
-                "Продукт: {0}".format(
-                    all_results[0][0]
-                )
-            )
+            painter.drawText(65, 40, '{0}'.format(all_results[0][0]))
 
             painter.drawText(
-                5,
-                55,
-                "Размер: {0}".format(
-                    all_results[0][3]
-                )
+                5, 60, "Цех: {0} | Партия: {1} | Размер: {2}".format(self.ui.line_guild.displayText(),self.ui.line_part.displayText(),all_results[0][3])
             )
+            painter.drawText(5, 80, "Арт: {0}".format(all_results[0][1]))
 
-            painter.drawText(
-                5,
-                75,
-                "Партия: {0}".format(
-                    self.ui.line_part.displayText()
-                )
-            )
+            painter.drawPixmap(25, 80, pix)
 
-            painter.drawText(
-                5,
-                95,
-                "Цех: {0}".format(
-                    self.ui.line_guild.displayText()
-                )
-            )
-
-            painter.drawText(
-                5,
-                115,
-                "Art: {0}".format(
-                    all_results[0][1]
-                )
-            )
-
-            painter.drawPixmap(80, 40, pix)
+            painter.drawText(75, 175, f"{self.ui.line_barkod.displayText()}")
 
             painter.end()
-    
 
     def view_message(self, message, header):
 
@@ -125,7 +103,6 @@ class Window(QtWidgets.QMainWindow):
         msgBox.setWindowTitle(header)
         msgBox.setText(message)
         msgBox.exec()
-
 
 
 app = QtWidgets.QApplication([])
